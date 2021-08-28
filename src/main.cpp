@@ -268,9 +268,5 @@ int main(int argc, char *argv[]) {
     connect(mainloop, mainloop_api, SUBSCRIPTION_TYPE_SOURCE,
             PA_SUBSCRIPTION_MASK_SOURCE, json);
   }
-
-  for (;;) {
-  }
-
   return 0;
 }
