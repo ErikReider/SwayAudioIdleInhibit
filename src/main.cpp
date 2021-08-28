@@ -67,14 +67,14 @@ struct Data {
 
 void sink_input_info_callback(pa_context *, const pa_sink_input_info *i, int,
                               void *userdata) {
-  auto *data = (Data *)userdata;
+  Data *data = (Data *)userdata;
   if (i && !i->corked) data->activeSink = true;
   pa_threaded_mainloop_signal(data->mainloop, 0);
 }
 
 void source_output_info_callback(pa_context *, const pa_source_output_info *i,
                                  int, void *userdata) {
-  auto *data = (Data *)userdata;
+  Data *data = (Data *)userdata;
   if (i && !i->corked) data->activeSource = true;
   pa_threaded_mainloop_signal(data->mainloop, 0);
 }
@@ -106,7 +106,7 @@ void getRunning(EventType eventType, Data *data, pa_context *context) {
 
 void subscribe_callback(pa_context *, pa_subscription_event_type_t type,
                         uint32_t, void *userdata) {
-  auto *data = (Data *)userdata;
+  Data *data = (Data *)userdata;
   bool isBoth = data->subscriptionType == SUBSCRIPTION_TYPE_BOTH;
   switch (type & PA_SUBSCRIPTION_EVENT_FACILITY_MASK) {
     case PA_SUBSCRIPTION_EVENT_SINK:
@@ -121,7 +121,7 @@ void subscribe_callback(pa_context *, pa_subscription_event_type_t type,
 }
 
 void context_state_callback(pa_context *c, void *userdata) {
-  auto *data = (Data *)userdata;
+  Data *data = (Data *)userdata;
   switch (pa_context_get_state(c)) {
     case PA_CONTEXT_CONNECTING:
     case PA_CONTEXT_AUTHORIZING:
