@@ -125,19 +125,24 @@ void getRunning(EventType eventType, Data *data, pa_context *context) {
 void subscribe_callback(pa_context *, pa_subscription_event_type_t type,
                         uint32_t, void *userdata) {
   Data *data = (Data *)userdata;
-  bool isBoth = data->subscriptionType == SUBSCRIPTION_TYPE_IDLE;
+  EventType eventType;
   switch (type & PA_SUBSCRIPTION_EVENT_FACILITY_MASK) {
     case PA_SUBSCRIPTION_EVENT_SINK:
-      data->eventCalled = isBoth ? EVENT_TYPE_IDLE : EVENT_TYPE_DRY_SINK;
-      pa_threaded_mainloop_signal(data->mainloop, 0);
+      eventType = EVENT_TYPE_DRY_SINK;
       break;
     case PA_SUBSCRIPTION_EVENT_SOURCE:
-      data->eventCalled = isBoth ? EVENT_TYPE_IDLE : EVENT_TYPE_DRY_SOURCE;
-      pa_threaded_mainloop_signal(data->mainloop, 0);
+      eventType = EVENT_TYPE_DRY_SOURCE;
       break;
     default:
       return;
   }
+  if(data->subscriptionType == SUBSCRIPTION_TYPE_IDLE) {
+    eventType = EVENT_TYPE_IDLE;
+  } else if(data->subscriptionType == SUBSCRIPTION_TYPE_DRY_BOTH) {
+    eventType = EVENT_TYPE_DRY_BOTH;
+  }
+  data->eventCalled = eventType;
+  pa_threaded_mainloop_signal(data->mainloop, 0);
 }
 
 void context_state_callback(pa_context *c, void *userdata) {
