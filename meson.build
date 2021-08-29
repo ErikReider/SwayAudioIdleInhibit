@@ -1,9 +1,8 @@
 project(
-  'AudioListener',
+  'SwayAudioIdleInhibit',
   'c', 'cpp',
-  default_options: ['warning_level=3'],
+  default_options: ['warning_level=2'],
 )
-
 
 wayland_protos = dependency('wayland-protocols')
 wayland_client = dependency('wayland-client', version: '>=1.14.91')
@@ -37,7 +36,7 @@ client_protos = declare_dependency(
 )
 
 executable(
-  'audioListener',
+  'swayAudioIdleInhibit',
   [
     './src/main.cpp',
     './src/idle.cpp',
