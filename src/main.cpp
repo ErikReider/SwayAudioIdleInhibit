@@ -5,18 +5,22 @@
 
 #include <iostream>
 
+#include "./idle.cpp"
+
 using namespace std;
 
 enum SubscriptionType {
-  SUBSCRIPTION_TYPE_SINK,
-  SUBSCRIPTION_TYPE_SOURCE,
-  SUBSCRIPTION_TYPE_BOTH
+  SUBSCRIPTION_TYPE_IDLE,
+  SUBSCRIPTION_TYPE_DRY_BOTH,
+  SUBSCRIPTION_TYPE_DRY_SINK,
+  SUBSCRIPTION_TYPE_DRY_SOURCE,
 };
 enum EventType {
-  EVENT_TYPE_SINK,
-  EVENT_TYPE_SOURCE,
-  EVENT_TYPE_BOTH,
-  EVENT_TYPE_NONE
+  EVENT_TYPE_IDLE,
+  EVENT_TYPE_DRY_BOTH,
+  EVENT_TYPE_DRY_SINK,
+  EVENT_TYPE_DRY_SOURCE,
+  EVENT_TYPE_NONE,
 };
 
 struct Data {
@@ -30,16 +34,18 @@ struct Data {
 
   SubscriptionType subscriptionType;
   pa_subscription_mask_t pa_subscriptionType;
-  bool json;
+
+  Idle *idle = NULL;
 
   Data(pa_threaded_mainloop *mainloop, pa_mainloop_api *mainloop_api,
        SubscriptionType subscriptionType,
-       pa_subscription_mask_t pa_subscriptionType, bool json) {
+       pa_subscription_mask_t pa_subscriptionType) {
     this->mainloop = mainloop;
     this->mainloop_api = mainloop_api;
     this->subscriptionType = subscriptionType;
     this->pa_subscriptionType = pa_subscriptionType;
-    this->json = json;
+
+    if (subscriptionType == SUBSCRIPTION_TYPE_IDLE) idle = new Idle();
   }
 
   void quit(int returnValue = 0) {
@@ -48,19 +54,26 @@ struct Data {
     pa_threaded_mainloop_free(mainloop);
   }
 
-  void printResult() {
-    bool isRunning = false;
+  void handleAction() {
     switch (subscriptionType) {
-      case SUBSCRIPTION_TYPE_BOTH:
-        isRunning = activeSink || activeSource;
+      case SUBSCRIPTION_TYPE_IDLE:
+        if (!idle) idle = new Idle();
+        idle->update(activeSink || activeSource);
         break;
-      case SUBSCRIPTION_TYPE_SINK:
-        isRunning = activeSink;
+      case SUBSCRIPTION_TYPE_DRY_BOTH:
+        this->print(activeSink || activeSource);
         break;
-      case SUBSCRIPTION_TYPE_SOURCE:
-        isRunning = activeSource;
+      case SUBSCRIPTION_TYPE_DRY_SINK:
+        this->print(activeSink);
+        break;
+      case SUBSCRIPTION_TYPE_DRY_SOURCE:
+        this->print(activeSource);
         break;
     }
+  }
+
+ private:
+  void print(bool isRunning) {
     cout << (isRunning ? "RUNNING" : "NOT RUNNING") << endl;
   }
 };
@@ -83,12 +96,12 @@ void getRunning(EventType eventType, Data *data, pa_context *context) {
   pa_threaded_mainloop_lock(data->mainloop);
   pa_operation *op = NULL;
   switch (eventType) {
-    case EVENT_TYPE_SINK:
+    case EVENT_TYPE_DRY_SINK:
       data->activeSink = false;
       op = pa_context_get_sink_input_info_list(context,
                                                sink_input_info_callback, data);
       break;
-    case EVENT_TYPE_SOURCE:
+    case EVENT_TYPE_DRY_SOURCE:
       data->activeSource = false;
       op = pa_context_get_source_output_info_list(
           context, source_output_info_callback, data);
@@ -107,13 +120,13 @@ void getRunning(EventType eventType, Data *data, pa_context *context) {
 void subscribe_callback(pa_context *, pa_subscription_event_type_t type,
                         uint32_t, void *userdata) {
   Data *data = (Data *)userdata;
-  bool isBoth = data->subscriptionType == SUBSCRIPTION_TYPE_BOTH;
+  bool isBoth = data->subscriptionType == SUBSCRIPTION_TYPE_IDLE;
   switch (type & PA_SUBSCRIPTION_EVENT_FACILITY_MASK) {
     case PA_SUBSCRIPTION_EVENT_SINK:
-      data->eventCalled = isBoth ? EVENT_TYPE_BOTH : EVENT_TYPE_SINK;
+      data->eventCalled = isBoth ? EVENT_TYPE_IDLE : EVENT_TYPE_DRY_SINK;
       break;
     case PA_SUBSCRIPTION_EVENT_SOURCE:
-      data->eventCalled = isBoth ? EVENT_TYPE_BOTH : EVENT_TYPE_SOURCE;
+      data->eventCalled = isBoth ? EVENT_TYPE_IDLE : EVENT_TYPE_DRY_SOURCE;
       break;
     default:
       return;
@@ -147,9 +160,9 @@ void context_state_callback(pa_context *c, void *userdata) {
 
 void connect(pa_threaded_mainloop *mainloop, pa_mainloop_api *mainloop_api,
              SubscriptionType subscriptionType,
-             pa_subscription_mask_t pa_subscriptionType, bool json) {
-  Data *data = new Data(mainloop, mainloop_api, subscriptionType,
-                        pa_subscriptionType, json);
+             pa_subscription_mask_t pa_subscriptionType) {
+  Data *data =
+      new Data(mainloop, mainloop_api, subscriptionType, pa_subscriptionType);
 
   pa_context *context = pa_context_new(mainloop_api, "PulseAudio Test");
   if (!context) {
@@ -174,37 +187,51 @@ void connect(pa_threaded_mainloop *mainloop, pa_mainloop_api *mainloop_api,
 
   // print when started
   switch (subscriptionType) {
-    case SUBSCRIPTION_TYPE_BOTH:
-      data->eventCalled = EVENT_TYPE_BOTH;
+    case SUBSCRIPTION_TYPE_IDLE:
+      data->eventCalled = EVENT_TYPE_IDLE;
       break;
-    case SUBSCRIPTION_TYPE_SINK:
-      data->eventCalled = EVENT_TYPE_SINK;
+    case SUBSCRIPTION_TYPE_DRY_BOTH:
+      data->eventCalled = EVENT_TYPE_DRY_BOTH;
       break;
-    case SUBSCRIPTION_TYPE_SOURCE:
-      data->eventCalled = EVENT_TYPE_SOURCE;
+    case SUBSCRIPTION_TYPE_DRY_SINK:
+      data->eventCalled = EVENT_TYPE_DRY_SINK;
+      break;
+    case SUBSCRIPTION_TYPE_DRY_SOURCE:
+      data->eventCalled = EVENT_TYPE_DRY_SOURCE;
       break;
   }
 
   for (;;) {
     switch (data->eventCalled) {
-      case EVENT_TYPE_BOTH:
-        getRunning(EVENT_TYPE_SINK, data, context);
-        getRunning(EVENT_TYPE_SOURCE, data, context);
-        data->printResult();
+      case EVENT_TYPE_IDLE:
+      case EVENT_TYPE_DRY_BOTH:
+        getRunning(EVENT_TYPE_DRY_SINK, data, context);
+        getRunning(EVENT_TYPE_DRY_SOURCE, data, context);
+        data->handleAction();
         break;
-      case EVENT_TYPE_SINK:
+      case EVENT_TYPE_DRY_SINK:
         getRunning(data->eventCalled, data, context);
-        data->printResult();
+        data->handleAction();
         break;
-      case EVENT_TYPE_SOURCE:
+      case EVENT_TYPE_DRY_SOURCE:
         getRunning(data->eventCalled, data, context);
-        data->printResult();
+        data->handleAction();
         break;
       default:
         continue;
     }
     data->eventCalled = EVENT_TYPE_NONE;
   }
+}
+
+void showHelp(char **argv) {
+  cout << "Usage:" << endl;
+  cout << "\t" << argv[0] << " <OPTION>" << endl;
+  cout << "Options:" << endl;
+  cout << "\t-h, --help \t\t Show help options" << endl;
+  cout << "\t--dry-print-both \t Don't inhibit idle and print if either any sink or any source is running" << endl;
+  cout << "\t--dry-print-sink \t Don't inhibit idle and print if any sink is running" << endl;
+  cout << "\t--dry-print-source \t Don't inhibit idle and print if any source is running" << endl;
 }
 
 pa_threaded_mainloop *getMainLoop() {
@@ -229,26 +256,31 @@ pa_mainloop_api *getMainLoopApi(pa_threaded_mainloop *mainloop) {
 }
 
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    printf("ERROR: You need at least one argument.\n");
-    return 1;
+  bool inhibitIdle = true;
+
+  bool printBoth = false;
+  bool printSource = false;
+  bool printSink = false;
+
+  bool printHelp = false;
+
+  if (argc > 1) {
+    for (int i = 1; i < argc; i++) {
+      if (strcmp(argv[i], "--dry-print-source") == 0) {
+        printSource = true;
+      } else if (strcmp(argv[i], "--dry-print-sink") == 0) {
+        printSink = true;
+      } else if (strcmp(argv[i], "--dry-print-both") == 0) {
+        printBoth = true;
+      } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
+        printHelp = true;
+      }
+    }
   }
 
-  bool both = false;
-  bool source = false;
-  bool sink = false;
-  bool json = false;
-
-  for (int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "--both") == 0) {
-      both = true;
-    } else if (strcmp(argv[i], "--source") == 0) {
-      source = true;
-    } else if (strcmp(argv[i], "--sink") == 0) {
-      sink = true;
-    } else if (strcmp(argv[i], "--json") == 0) {
-      json = true;
-    }
+  if (printHelp) {
+    showHelp(argv);
+    return 0;
   }
 
   pa_threaded_mainloop *mainloop = getMainLoop();
@@ -258,15 +290,18 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  if (both || (sink && source)) {
-    connect(mainloop, mainloop_api, SUBSCRIPTION_TYPE_BOTH,
-            PA_SUBSCRIPTION_MASK_ALL, json);
-  } else if (sink) {
-    connect(mainloop, mainloop_api, SUBSCRIPTION_TYPE_SINK,
-            PA_SUBSCRIPTION_MASK_SINK, json);
-  } else if (source) {
-    connect(mainloop, mainloop_api, SUBSCRIPTION_TYPE_SOURCE,
-            PA_SUBSCRIPTION_MASK_SOURCE, json);
+  if (inhibitIdle && (!printSink && !printSource && !printBoth)) {
+    connect(mainloop, mainloop_api, SUBSCRIPTION_TYPE_IDLE,
+            PA_SUBSCRIPTION_MASK_ALL);
+  } else if (printBoth) {
+    connect(mainloop, mainloop_api, SUBSCRIPTION_TYPE_DRY_BOTH,
+            PA_SUBSCRIPTION_MASK_ALL);
+  } else if (printSink) {
+    connect(mainloop, mainloop_api, SUBSCRIPTION_TYPE_DRY_SINK,
+            PA_SUBSCRIPTION_MASK_SINK);
+  } else if (printSource) {
+    connect(mainloop, mainloop_api, SUBSCRIPTION_TYPE_DRY_SOURCE,
+            PA_SUBSCRIPTION_MASK_SOURCE);
   }
   return 0;
 }
