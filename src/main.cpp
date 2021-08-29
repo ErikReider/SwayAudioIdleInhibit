@@ -229,9 +229,15 @@ void showHelp(char **argv) {
   cout << "\t" << argv[0] << " <OPTION>" << endl;
   cout << "Options:" << endl;
   cout << "\t-h, --help \t\t Show help options" << endl;
-  cout << "\t--dry-print-both \t Don't inhibit idle and print if either any sink or any source is running" << endl;
-  cout << "\t--dry-print-sink \t Don't inhibit idle and print if any sink is running" << endl;
-  cout << "\t--dry-print-source \t Don't inhibit idle and print if any source is running" << endl;
+  cout << "\t--dry-print-both \t Don't inhibit idle and print if either any "
+          "sink or any source is running"
+       << endl;
+  cout << "\t--dry-print-sink \t Don't inhibit idle and print if any sink is "
+          "running"
+       << endl;
+  cout << "\t--dry-print-source \t Don't inhibit idle and print if any source "
+          "is running"
+       << endl;
 }
 
 pa_threaded_mainloop *getMainLoop() {
