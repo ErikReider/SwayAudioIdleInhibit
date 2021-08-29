@@ -57,7 +57,6 @@ struct Data {
   void handleAction() {
     switch (subscriptionType) {
       case SUBSCRIPTION_TYPE_IDLE:
-        if (!idle) idle = new Idle();
         idle->update(activeSink || activeSource);
         break;
       case SUBSCRIPTION_TYPE_DRY_BOTH:
@@ -107,9 +106,15 @@ void getRunning(EventType eventType, Data *data, pa_context *context) {
           context, source_output_info_callback, data);
       break;
     default:
+      fprintf(stderr, "Operation Default!\n");
+      pa_threaded_mainloop_unlock(data->mainloop);
       return;
   }
-  if (!op) return;
+  if (!op) {
+    pa_threaded_mainloop_unlock(data->mainloop);
+    fprintf(stderr, "Operation failed!\n");
+    return;
+  }
   while (pa_operation_get_state(op) == PA_OPERATION_RUNNING) {
     pa_threaded_mainloop_wait(data->mainloop);
   }
@@ -124,9 +129,11 @@ void subscribe_callback(pa_context *, pa_subscription_event_type_t type,
   switch (type & PA_SUBSCRIPTION_EVENT_FACILITY_MASK) {
     case PA_SUBSCRIPTION_EVENT_SINK:
       data->eventCalled = isBoth ? EVENT_TYPE_IDLE : EVENT_TYPE_DRY_SINK;
+      pa_threaded_mainloop_signal(data->mainloop, 0);
       break;
     case PA_SUBSCRIPTION_EVENT_SOURCE:
       data->eventCalled = isBoth ? EVENT_TYPE_IDLE : EVENT_TYPE_DRY_SOURCE;
+      pa_threaded_mainloop_signal(data->mainloop, 0);
       break;
     default:
       return;
@@ -208,19 +215,24 @@ void connect(pa_threaded_mainloop *mainloop, pa_mainloop_api *mainloop_api,
         getRunning(EVENT_TYPE_DRY_SINK, data, context);
         getRunning(EVENT_TYPE_DRY_SOURCE, data, context);
         data->handleAction();
+        data->eventCalled = EVENT_TYPE_NONE;
         break;
       case EVENT_TYPE_DRY_SINK:
         getRunning(data->eventCalled, data, context);
         data->handleAction();
+        data->eventCalled = EVENT_TYPE_NONE;
         break;
       case EVENT_TYPE_DRY_SOURCE:
         getRunning(data->eventCalled, data, context);
         data->handleAction();
+        data->eventCalled = EVENT_TYPE_NONE;
         break;
-      default:
-        continue;
+      case EVENT_TYPE_NONE:
+        pa_threaded_mainloop_lock(mainloop);
+        pa_threaded_mainloop_wait(mainloop);
+        pa_threaded_mainloop_unlock(mainloop);
+        break;
     }
-    data->eventCalled = EVENT_TYPE_NONE;
   }
 }
 

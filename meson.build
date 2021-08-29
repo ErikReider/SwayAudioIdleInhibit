@@ -1,7 +1,8 @@
 project(
   'SwayAudioIdleInhibit',
   'c', 'cpp',
-  default_options: ['warning_level=2'],
+  version: '0.1',
+  default_options: ['warning_level=3', 'cpp_std=c++14'],
 )
 
 wayland_protos = dependency('wayland-protocols')
