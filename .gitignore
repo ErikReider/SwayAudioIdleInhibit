@@ -52,3 +52,6 @@ Mkfile.old
 dkms.conf
 
 .cache/
+SwayAudioIdleInhibit
+sway-audio-idle-inhibit-git*
+pkg

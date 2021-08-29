@@ -7,7 +7,7 @@ _pkgfoldername=SwayAudioIdleInhibit
 url="https://github.com/ErikReider/$_pkgfoldername"
 arch=(x86_64)
 license=(GPL)
-depends=("wayland-client>=1.14.91" "wayland-protocols" "wayland-client" "libpulse")
+depends=("wayland>=1.14.91" "wayland-protocols" "libpulse")
 makedepends=(gcc meson git)
 optdepends=("swaync-git" "swaysettings-git")
 source=("git+$url")
