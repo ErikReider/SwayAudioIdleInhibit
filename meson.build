@@ -36,7 +36,7 @@ client_protos = declare_dependency(
 )
 
 executable(
-  'swayAudioIdleInhibit',
+  'sway-audio-idle-inhibit',
   [
     './src/main.cpp',
     './src/idle.cpp',

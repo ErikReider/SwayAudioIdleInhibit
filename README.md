@@ -21,5 +21,5 @@ meson install -C build
 ## Run
 
 ```zsh
-./build/swayAudioIdleInhibit
+./build/sway-audio-idle-inhibit
 ```
