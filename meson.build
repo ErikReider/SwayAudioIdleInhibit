@@ -40,6 +40,7 @@ executable(
   'sway-audio-idle-inhibit',
   [
     './src/main.cpp',
+    './src/pulse.cpp',
     './src/idle.cpp',
   ],
   dependencies: [
