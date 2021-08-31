@@ -6,10 +6,22 @@ void showHelp(char **argv) {
   cout << "Usage:" << endl;
   cout << "\t" << argv[0] << " <OPTION>" << endl;
   cout << "Options:" << endl;
-  cout << "\t-h, --help \t\t Show help options" << endl;
-  cout << "\t--dry-print-both \t Don't inhibit idle and print if either any sink or any source is running" << endl;
-  cout << "\t--dry-print-sink \t Don't inhibit idle and print if any sink is running" << endl;
-  cout << "\t--dry-print-source \t Don't inhibit idle and print if any source is running" << endl;
+  cout << "\t" << argv[0]
+       << "\t\t\t\t Inhibits idle if either any sink or any source is running"
+       << endl;
+  cout << "\t" << argv[0] << " -h, --help \t\t Show help options" << endl;
+  cout << "\t" << argv[0]
+       << " --dry-print-both \t Don't inhibit idle and print if either any "
+          "sink or any source is running"
+       << endl;
+  cout << "\t" << argv[0]
+       << " --dry-print-sink \t Don't inhibit idle and print if any sink is "
+          "running"
+       << endl;
+  cout << "\t" << argv[0]
+       << " --dry-print-source \t Don't inhibit idle and print if any source "
+          "is running"
+       << endl;
 }
 
 int main(int argc, char *argv[]) {
