@@ -67,15 +67,15 @@ class Idle {
         idle = zwp_idle_inhibit_manager_v1_create_inhibitor(
             wl_idle_inhibit_manager, surface);
         wl_display_roundtrip(display);
-        cout << "IDLE INHIBITED" << endl;
       }
+      cout << "IDLE INHIBITED" << endl;
     } else {
       if (idle != NULL) {
         zwp_idle_inhibitor_v1_destroy(idle);
         idle = NULL;
         wl_display_roundtrip(display);
-        cout << "NOT IDLE INHIBITED" << endl;
       }
+      cout << "NOT IDLE INHIBITED" << endl;
     }
   }
 };
