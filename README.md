@@ -7,8 +7,8 @@ This only works for pulseaudio / pipewire-pulse
 
 ## Install
 
-<!-- Arch: -->
-<!-- The package is available on the [AUR]() -->
+Arch:
+The package is available on the [AUR](https://aur.archlinux.org/packages/sway-audio-idle-inhibit-git/)
 
 Other:
 
