@@ -40,8 +40,12 @@ executable(
   'sway-audio-idle-inhibit',
   [
     './src/main.cpp',
+    './src/data.cpp',
     './src/pulse.cpp',
     './src/idle.cpp',
+  ],
+  include_directories: [
+    include_directories('include')
   ],
   dependencies: [
     dependency('libpulse', version: '>= 15.0'),

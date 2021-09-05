@@ -1,6 +1,6 @@
 #include <cstring>
 
-#include "./pulse.cpp"
+#include "pulse.hpp"
 
 void showHelp(char **argv) {
   cout << "Usage:" << endl;
