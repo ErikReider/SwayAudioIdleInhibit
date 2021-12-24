@@ -29,6 +29,7 @@ client_protos_headers = wayland_scanner_client.process(xml)
 lib_client_protos = static_library(
   'client_protos',
   [ client_protos_src, client_protos_headers ],
+  dependencies: [ wayland_client ],
 )
 
 client_protos = declare_dependency(
