@@ -10,6 +10,8 @@
 #include <cstdlib>
 #include <iostream>
 
+#include "data.hpp"
+
 int Pulse::init(SubscriptionType subscriptionType,
                 pa_subscription_mask_t pa_subscriptionType,
                 EventType eventType) {
@@ -86,7 +88,8 @@ void Pulse::subscribe_callback(pa_context *, pa_subscription_event_type_t type,
   }
   if (data->subscriptionType == SUBSCRIPTION_TYPE_IDLE) {
     eventType = EVENT_TYPE_IDLE;
-  } else if (data->subscriptionType == SUBSCRIPTION_TYPE_DRY_BOTH) {
+  } else if (data->subscriptionType == SUBSCRIPTION_TYPE_DRY_BOTH ||
+             data->subscriptionType == SUBSCRIPTION_TYPE_DRY_BOTH_WAYBAR) {
     eventType = EVENT_TYPE_DRY_BOTH;
   }
   data->eventCalled = eventType;

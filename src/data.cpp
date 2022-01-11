@@ -26,6 +26,9 @@ void Data::handleAction() {
     case SUBSCRIPTION_TYPE_DRY_BOTH:
       this->print(activeSink || activeSource);
       break;
+    case SUBSCRIPTION_TYPE_DRY_BOTH_WAYBAR:
+      this->printWayBar(activeSink, activeSource);
+      break;
     case SUBSCRIPTION_TYPE_DRY_SINK:
       this->print(activeSink);
       break;
@@ -37,4 +40,18 @@ void Data::handleAction() {
 
 void Data::print(bool isRunning) {
   cout << (isRunning ? "RUNNING" : "NOT RUNNING") << endl;
+}
+
+void Data::printWayBar(bool activeSink, bool activeSource) {
+  string result[2] = {activeSink ? "output" : "", activeSource ? "input" : ""};
+  string text = "";
+  for (const auto &str : result) {
+    if (!text.empty() && !str.empty()) text += "-";
+    text += str;
+  }
+  if (text.empty()) text = "none";
+  printf(
+      "{\"text\": \"\", \"alt\": \"%s\", \"tooltip\": \"\", \"class\": "
+      "\"%s\"}\n",
+      text.c_str(), text.c_str());
 }

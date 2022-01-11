@@ -12,6 +12,7 @@ using namespace std;
 enum SubscriptionType {
   SUBSCRIPTION_TYPE_IDLE,
   SUBSCRIPTION_TYPE_DRY_BOTH,
+  SUBSCRIPTION_TYPE_DRY_BOTH_WAYBAR,
   SUBSCRIPTION_TYPE_DRY_SINK,
   SUBSCRIPTION_TYPE_DRY_SOURCE,
 };
@@ -49,4 +50,5 @@ struct Data {
 
  private:
   void print(bool isRunning);
+  void printWayBar(bool activeSink, bool activeSource);
 };

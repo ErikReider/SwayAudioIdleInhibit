@@ -1,33 +1,29 @@
 #include <cstring>
 
+#include "data.hpp"
 #include "pulse.hpp"
 
 void showHelp(char **argv) {
-  cout << "Usage:" << endl;
-  cout << "\t" << argv[0] << " <OPTION>" << endl;
-  cout << "Options:" << endl;
-  cout << "\t" << argv[0]
-       << "\t\t\t\t Inhibits idle if either any sink or any source is running"
-       << endl;
-  cout << "\t" << argv[0] << " -h, --help \t\t Show help options" << endl;
-  cout << "\t" << argv[0]
-       << " --dry-print-both \t Don't inhibit idle and print if either any "
-          "sink or any source is running"
-       << endl;
-  cout << "\t" << argv[0]
-       << " --dry-print-sink \t Don't inhibit idle and print if any sink is "
-          "running"
-       << endl;
-  cout << "\t" << argv[0]
-       << " --dry-print-source \t Don't inhibit idle and print if any source "
-          "is running"
-       << endl;
+  string name = basename(argv[0]);
+  cout << "Usage:\n";
+  cout << "\t" << name << " <OPTION>\n";
+  cout << "Options:\n";
+  cout << "\t " << name
+       << "\t Inhibits idle if either any sink or any source is running\n";
+  cout << "\t -h, --help \t\t\t Show help options\n";
+  cout << "\t --dry-print-both \t\t Don't inhibit idle and print if either any "
+          "sink or any source is running\n";
+  cout << "\t --dry-print-both-waybar \t Same as --dry-print-both but outputs "
+          "in a waybar friendly manner\n";
+  cout << "\t --dry-print-sink \t\t Don't inhibit idle and print if any sink is "
+          "running\n";
+  cout << "\t --dry-print-source \t\t Don't inhibit idle and print if any source "
+          "is running\n";
 }
 
 int main(int argc, char *argv[]) {
-  bool inhibitIdle = true;
-
   bool printBoth = false;
+  bool printBothWayBar = false;
   bool printSource = false;
   bool printSink = false;
 
@@ -39,6 +35,8 @@ int main(int argc, char *argv[]) {
         printSink = true;
       } else if (strcmp(argv[i], "--dry-print-both") == 0) {
         printBoth = true;
+      } else if (strcmp(argv[i], "--dry-print-both-waybar") == 0) {
+        printBothWayBar = true;
       } else {
         showHelp(argv);
         return 0;
@@ -46,12 +44,15 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (inhibitIdle && (!printSink && !printSource && !printBoth)) {
+  if (!printSink && !printSource && !printBoth && !printBothWayBar) {
     return Pulse().init(SUBSCRIPTION_TYPE_IDLE, PA_SUBSCRIPTION_MASK_ALL,
                         EVENT_TYPE_IDLE);
   } else if (printBoth) {
     return Pulse().init(SUBSCRIPTION_TYPE_DRY_BOTH, PA_SUBSCRIPTION_MASK_ALL,
                         EVENT_TYPE_DRY_BOTH);
+  } else if (printBothWayBar) {
+    return Pulse().init(SUBSCRIPTION_TYPE_DRY_BOTH_WAYBAR,
+                        PA_SUBSCRIPTION_MASK_ALL, EVENT_TYPE_DRY_BOTH);
   } else if (printSink) {
     return Pulse().init(SUBSCRIPTION_TYPE_DRY_SINK, PA_SUBSCRIPTION_MASK_SINK,
                         EVENT_TYPE_DRY_SINK);
