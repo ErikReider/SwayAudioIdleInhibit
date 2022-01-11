@@ -50,8 +50,8 @@ void Data::printWayBar(bool activeSink, bool activeSource) {
     text += str;
   }
   if (text.empty()) text = "none";
-  printf(
-      "{\"text\": \"\", \"alt\": \"%s\", \"tooltip\": \"\", \"class\": "
-      "\"%s\"}\n",
-      text.c_str(), text.c_str());
+  cout << "{\"text\": \"\", \"alt\": \"" + text +
+              "\", \"tooltip\": \"\", \"class\": "
+              "\"" +
+              text + "\"}" << endl;
 }
