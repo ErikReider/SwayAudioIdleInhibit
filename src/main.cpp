@@ -15,10 +15,10 @@ void showHelp(char **argv) {
           "sink or any source is running\n";
   cout << "\t --dry-print-both-waybar \t Same as --dry-print-both but outputs "
           "in a waybar friendly manner\n";
-  cout << "\t --dry-print-sink \t\t Don't inhibit idle and print if any sink is "
-          "running\n";
-  cout << "\t --dry-print-source \t\t Don't inhibit idle and print if any source "
-          "is running\n";
+  cout << "\t --dry-print-sink \t\t Don't inhibit idle and print if any "
+          "sink is running\n";
+  cout << "\t --dry-print-source \t\t Don't inhibit idle and print if any "
+          "source is running\n";
 }
 
 int main(int argc, char *argv[]) {
@@ -44,15 +44,17 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  pa_subscription_mask_t all_mask =
+      (pa_subscription_mask_t)(PA_SUBSCRIPTION_MASK_SINK |
+                               PA_SUBSCRIPTION_MASK_SOURCE);
   if (!printSink && !printSource && !printBoth && !printBothWayBar) {
-    return Pulse().init(SUBSCRIPTION_TYPE_IDLE, PA_SUBSCRIPTION_MASK_ALL,
-                        EVENT_TYPE_IDLE);
+    return Pulse().init(SUBSCRIPTION_TYPE_IDLE, all_mask, EVENT_TYPE_IDLE);
   } else if (printBoth) {
-    return Pulse().init(SUBSCRIPTION_TYPE_DRY_BOTH, PA_SUBSCRIPTION_MASK_ALL,
+    return Pulse().init(SUBSCRIPTION_TYPE_DRY_BOTH, all_mask,
                         EVENT_TYPE_DRY_BOTH);
   } else if (printBothWayBar) {
-    return Pulse().init(SUBSCRIPTION_TYPE_DRY_BOTH_WAYBAR,
-                        PA_SUBSCRIPTION_MASK_ALL, EVENT_TYPE_DRY_BOTH);
+    return Pulse().init(SUBSCRIPTION_TYPE_DRY_BOTH_WAYBAR, all_mask,
+                        EVENT_TYPE_DRY_BOTH);
   } else if (printSink) {
     return Pulse().init(SUBSCRIPTION_TYPE_DRY_SINK, PA_SUBSCRIPTION_MASK_SINK,
                         EVENT_TYPE_DRY_SINK);
