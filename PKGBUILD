@@ -5,7 +5,11 @@ pkgrel=1
 pkgdesc="Prevents swayidle from sleeping while any application is outputting or receiving audio"
 _pkgfoldername=SwayAudioIdleInhibit
 url="https://github.com/ErikReider/$_pkgfoldername"
-arch=(x86_64)
+arch=(
+    'x86_64'
+    'aarch64' # ARM v8 64-bit
+    'armv7h'  # ARM v7 hardfloat
+)
 license=(GPL)
 depends=("wayland>=1.14.91" "wayland-protocols" "libpulse")
 makedepends=(gcc meson git)
