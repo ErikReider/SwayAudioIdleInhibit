@@ -48,3 +48,25 @@ Monitor sinks: will print `RUNNING` or `NOT RUNNING`
 ```zsh
 sway-audio-idle-inhibit --dry-print-sink
 ```
+
+## Waybar Integration
+
+A custom waybar module can be used to display an icon when any application is
+using your mic or playing any audio.
+
+Add the follow section to your `~/.config/waybar/config` file and add
+`custom/audio_idle_inhibitor` to either the `modules-left`, `modules-center`
+or `modules-right` list.
+
+```
+	"custom/audio_idle_inhibitor": {
+		"format": "{icon}",
+		"exec": "sway-audio-idle-inhibit --dry-print-both-waybar",
+		"return-type": "json",
+		"format-icons": {
+			"output": "󰅶",
+			"none": "󰾪"
+		}
+	},
+```
+
