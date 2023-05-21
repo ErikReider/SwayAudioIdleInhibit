@@ -54,18 +54,23 @@ sway-audio-idle-inhibit --dry-print-sink
 A custom waybar module can be used to display an icon when any application is
 using your mic or playing any audio.
 
-Add the follow section to your `~/.config/waybar/config` file and add
+Add the following section to your `~/.config/waybar/config` file and add
 `custom/audio_idle_inhibitor` to either the `modules-left`, `modules-center`
 or `modules-right` list.
+
+*Note: The FontAwesome font is used for the icons below*
 
 ```
 	"custom/audio_idle_inhibitor": {
 		"format": "{icon}",
 		"exec": "sway-audio-idle-inhibit --dry-print-both-waybar",
+		"exec-if": "which sway-audio-idle-inhibit",
 		"return-type": "json",
 		"format-icons": {
-			"output": "󰅶",
-			"none": "󰾪"
+			"output": "",
+			"input": "",
+			"output-input": "  ",
+			"none": ""
 		}
 	},
 ```
