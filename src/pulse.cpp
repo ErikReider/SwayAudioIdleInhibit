@@ -29,7 +29,7 @@ int Pulse::init(SubscriptionType subscriptionType,
 void Pulse::sink_input_info_callback(pa_context *, const pa_sink_input_info *i,
                                      int, void *userdata) {
   Data *data = (Data *)userdata;
-  if (i && !i->corked) data->activeSink = true;
+if (i && !i->corked && i->client != 0) data->activeSink = true;
   pa_threaded_mainloop_signal(data->mainloop, 0);
 }
 
