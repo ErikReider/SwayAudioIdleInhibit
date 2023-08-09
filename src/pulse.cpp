@@ -77,10 +77,10 @@ void Pulse::subscribe_callback(pa_context *, pa_subscription_event_type_t type,
   Data *data = (Data *)userdata;
   EventType eventType;
   switch (type & PA_SUBSCRIPTION_EVENT_FACILITY_MASK) {
-    case PA_SUBSCRIPTION_EVENT_SINK:
+    case PA_SUBSCRIPTION_EVENT_SINK_INPUT:
       eventType = EVENT_TYPE_DRY_SINK;
       break;
-    case PA_SUBSCRIPTION_EVENT_SOURCE:
+    case PA_SUBSCRIPTION_EVENT_SOURCE_OUTPUT:
       eventType = EVENT_TYPE_DRY_SOURCE;
       break;
     default:

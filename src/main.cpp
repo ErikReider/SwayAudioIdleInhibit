@@ -46,8 +46,8 @@ int main(int argc, char *argv[]) {
   }
 
   pa_subscription_mask_t all_mask =
-      (pa_subscription_mask_t)(PA_SUBSCRIPTION_MASK_SINK |
-                               PA_SUBSCRIPTION_MASK_SOURCE);
+      (pa_subscription_mask_t)(PA_SUBSCRIPTION_MASK_SINK_INPUT |
+                               PA_SUBSCRIPTION_MASK_SOURCE_OUTPUT);
   if (!printSink && !printSource && !printBoth && !printBothWayBar) {
     return Pulse().init(SUBSCRIPTION_TYPE_IDLE, all_mask, EVENT_TYPE_IDLE);
   } else if (printBoth) {
@@ -57,11 +57,11 @@ int main(int argc, char *argv[]) {
     return Pulse().init(SUBSCRIPTION_TYPE_DRY_BOTH_WAYBAR, all_mask,
                         EVENT_TYPE_DRY_BOTH);
   } else if (printSink) {
-    return Pulse().init(SUBSCRIPTION_TYPE_DRY_SINK, PA_SUBSCRIPTION_MASK_SINK,
+    return Pulse().init(SUBSCRIPTION_TYPE_DRY_SINK, PA_SUBSCRIPTION_MASK_SINK_INPUT,
                         EVENT_TYPE_DRY_SINK);
   } else if (printSource) {
     return Pulse().init(SUBSCRIPTION_TYPE_DRY_SOURCE,
-                        PA_SUBSCRIPTION_MASK_SOURCE, EVENT_TYPE_DRY_SOURCE);
+                        PA_SUBSCRIPTION_MASK_SOURCE_OUTPUT, EVENT_TYPE_DRY_SOURCE);
   }
   return 0;
 }
