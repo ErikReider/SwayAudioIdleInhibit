@@ -9,6 +9,8 @@
 
 using namespace std;
 
+#define MAX_IGNORED_SOURCE_OUTPUTS 100
+
 enum SubscriptionType {
   SUBSCRIPTION_TYPE_IDLE,
   SUBSCRIPTION_TYPE_DRY_BOTH,
@@ -36,13 +38,15 @@ struct Data {
   SubscriptionType subscriptionType;
   pa_subscription_mask_t pa_subscriptionType;
 
+  char **ignoredSourceOutputs;
+
   Idle *idle = NULL;
 
   bool failed = false;
 
   Data(pa_threaded_mainloop *mainloop, pa_mainloop_api *mainloop_api,
        SubscriptionType subscriptionType,
-       pa_subscription_mask_t pa_subscriptionType, EventType eventType);
+       pa_subscription_mask_t pa_subscriptionType, EventType eventType, char **ignoredSourceOutputs);
 
   void quit(int returnValue = 0);
 
