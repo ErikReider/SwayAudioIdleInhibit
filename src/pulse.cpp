@@ -44,12 +44,17 @@ void Pulse::source_output_info_callback(pa_context *,
   if (i && i->proplist) {
     const char *appName = pa_proplist_gets(i->proplist, "application.name");
     if (appName) {
-      int i = 0;
-      while (data->ignoredSourceOutputs[i] != nullptr) {
-        if (strcmp(appName, data->ignoredSourceOutputs[i]) == 0) {
+      int ignoredSourceOutputsCount = 0;
+      while (
+        data->ignoredSourceOutputs[ignoredSourceOutputsCount] != nullptr
+        && ignoreSourceOutput == false
+        && ignoredSourceOutputsCount < MAX_IGNORED_SOURCE_OUTPUTS
+      ) {
+        if (strcmp(appName, data->ignoredSourceOutputs[ignoredSourceOutputsCount]) == 0) {
           ignoreSourceOutput = true;
+          break;
         }
-        i++;
+        ignoredSourceOutputsCount++;
       }
     }
   }
