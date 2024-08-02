@@ -51,14 +51,14 @@ int main(int argc, char *argv[]) {
           ignoredSourceOutputs[ignoredSourceOutputsCount++] = token;
           token = strtok_r(nullptr, " ", &saveptr);
         }
-
-        ignoredSourceOutputs[ignoredSourceOutputsCount] = nullptr;
       } else {
         showHelp(argv);
         return 0;
       }
     }
   }
+
+  ignoredSourceOutputs[ignoredSourceOutputsCount] = nullptr;
 
   pa_subscription_mask_t all_mask =
       (pa_subscription_mask_t)(PA_SUBSCRIPTION_MASK_SINK_INPUT |
