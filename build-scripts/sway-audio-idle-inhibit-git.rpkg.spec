@@ -8,8 +8,9 @@ URL:        https://github.com/ErikReider/SwayAudioIdleInhibit
 VCS:        {{{ git_repo_vcs }}}
 Source:     {{{ git_repo_pack }}}
 
-BuildRequires:    meson >= 0.60.0
-BuildRequires:    git
+BuildRequires: meson >= 0.60.0
+BuildRequires: git
+BuildRequires: gcc-c++
 
 BuildRequires: wayland-devel
 BuildRequires: wayland-protocols-devel
