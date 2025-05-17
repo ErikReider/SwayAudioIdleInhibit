@@ -29,7 +29,7 @@ Idle::Idle() {
     exit(1);
   }
 
-  const struct wl_registry_listener registry_listener = {
+  const static struct wl_registry_listener registry_listener = {
       .global = global_add,
       .global_remove = global_remove,
   };
