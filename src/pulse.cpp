@@ -43,6 +43,7 @@ void Pulse::source_output_info_callback(pa_context *,
   bool ignoreSourceOutput = false;
   if (i && i->proplist) {
     const char *appName = pa_proplist_gets(i->proplist, "application.name");
+    if (!appName) appName = pa_proplist_gets(i->proplist, "media.name");
     if (appName) {
       int ignoredSourceOutputsCount = 0;
       while (
