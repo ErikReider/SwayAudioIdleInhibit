@@ -12,10 +12,10 @@ BuildRequires: meson >= 0.60.0
 BuildRequires: git
 BuildRequires: gcc-c++
 
-BuildRequires: wayland-devel
-BuildRequires: wayland-protocols-devel
-BuildRequires: libadwaita-devel >= 1.6
 BuildRequires: pkgconfig(libpulse)
+BuildRequires: pkgconfig(libsystemd)
+
+%{?systemd_requires}
 
 %description
 Prevents swayidle from sleeping while any application is outputting or receiving audio.
