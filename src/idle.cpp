@@ -1,69 +1,72 @@
+#include <cassert>
+#include <cstdio>
+#include <fcntl.h>
 #include <iostream>
-#include <string.h>
+#include <unistd.h>
 
 #include "idle.hpp"
 
 using namespace std;
 
-void Idle::global_add(void *data, struct wl_registry *registry, uint32_t name,
-					  const char *interface, uint32_t) {
-	Idle *idle = (Idle *)data;
-	if (strcmp(interface, wl_compositor_interface.name) == 0) {
-		idle->compositor = (wl_compositor *)wl_registry_bind(
-			registry, name, &wl_compositor_interface, 1);
-	} else if (strcmp(interface, zwp_idle_inhibit_manager_v1_interface.name) ==
-			   0) {
-		idle->wl_idle_inhibit_manager =
-			(zwp_idle_inhibit_manager_v1 *)wl_registry_bind(
-				registry, name, &zwp_idle_inhibit_manager_v1_interface, 1);
+void Idle::block() {
+	assert(bus);
+
+	// Skip if already inhibiting
+	if (fd >= 0) {
+		return;
 	}
+
+	sd_bus_message *message = nullptr;
+	sd_bus_error error = SD_BUS_ERROR_NULL;
+	int ret = sd_bus_call_method(
+		bus, "org.freedesktop.login1", "/org/freedesktop/login1",
+		"org.freedesktop.login1.Manager", "Inhibit", &error, &message, "ssss",
+		"idle", "sway-audio-idle-inhibit", "Audio is playing", "block");
+	if (ret < 0) {
+		fprintf(stderr, "Could not send inhibit signal!\n");
+		abort();
+	}
+
+	ret = sd_bus_message_read(message, "h", &fd);
+	if (ret < 0) {
+		errno = -ret;
+		fprintf(stderr, "Could not get DBus response\n");
+		abort();
+	}
+
+	// Clone the FD (will be invalid once we unref the message)
+	fd = fcntl(fd, F_DUPFD_CLOEXEC, 3);
+	if (fd >= 0) {
+	} else {
+		fprintf(stderr, "Could not copy lock fd\n");
+	}
+
+	sd_bus_error_free(&error);
+	sd_bus_message_unref(message);
 }
 
-void Idle::global_remove(void *, struct wl_registry *, uint32_t) {
+void Idle::release_block() {
+	if (fd >= 0) {
+		close(fd);
+		fd = -1;
+	}
 }
 
 Idle::Idle() {
-	display = wl_display_connect(NULL);
-	if (display == NULL) {
-		fprintf(stderr, "failed to connect to wl_display\n");
-		exit(1);
+	// Connect to DBus
+	int ret = sd_bus_default_system(&bus);
+	if (ret < 0) {
+		fprintf(stderr, "Failed to get DBus connection\n");
+		abort();
 	}
-
-	const static struct wl_registry_listener registry_listener = {
-		.global = global_add,
-		.global_remove = global_remove,
-	};
-
-	struct wl_registry *registry = wl_display_get_registry(display);
-	wl_registry_add_listener(registry, &registry_listener, this);
-	wl_display_roundtrip(display);
-
-	if (wl_idle_inhibit_manager == NULL) {
-		fprintf(stderr, "wl_idle_inhibit_manager is NULL\n");
-		exit(1);
-	}
-	if (compositor == NULL) {
-		fprintf(stderr, "compositor is NULL\n");
-		exit(1);
-	}
-
-	surface = wl_compositor_create_surface(compositor);
 }
 
 void Idle::update(bool isRunning) {
 	if (isRunning) {
-		if (idle == NULL) {
-			idle = zwp_idle_inhibit_manager_v1_create_inhibitor(
-				wl_idle_inhibit_manager, surface);
-			wl_display_roundtrip(display);
-		}
+		block();
 		cout << "IDLE INHIBITED" << endl;
 	} else {
-		if (idle != NULL) {
-			zwp_idle_inhibitor_v1_destroy(idle);
-			idle = NULL;
-			wl_display_roundtrip(display);
-		}
+		release_block();
 		cout << "NOT IDLE INHIBITED" << endl;
 	}
 }

@@ -1,20 +1,19 @@
 #pragma once
 
-#include "idle-inhibit-unstable-v1-client-protocol.h"
-
-using namespace std;
+#if HAVE_SYSTEMD
+#include <systemd/sd-bus.h>
+#include <systemd/sd-login.h>
+#elif HAVE_ELOGIND
+#include <elogind/sd-bus.h>
+#include <elogind/sd-login.h>
+#endif
 
 class Idle {
-	struct wl_compositor *compositor = NULL;
-	struct zwp_idle_inhibit_manager_v1 *wl_idle_inhibit_manager = NULL;
-	struct wl_surface *surface = NULL;
-	struct wl_display *display = NULL;
-	struct zwp_idle_inhibitor_v1 *idle = NULL;
+	struct sd_bus *bus = nullptr;
+	int fd = -1;
 
-	static void global_add(void *data, struct wl_registry *registry,
-						   uint32_t name, const char *interface, uint32_t);
-
-	static void global_remove(void *, struct wl_registry *, uint32_t);
+	void block();
+	void release_block();
 
   public:
 	Idle();

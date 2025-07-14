@@ -1,0 +1,1 @@
+option('logind-provider', type: 'combo', choices: ['systemd', 'elogind'], value: 'systemd', description: 'Provider of logind support library')

@@ -1,58 +1,53 @@
 project(
-  'SwayAudioIdleInhibit',
-  'c', 'cpp',
-  version: '0.1.2',
-  default_options: [],
+	'SwayAudioIdleInhibit',
+	'cpp',
+	version: '0.1.2',
+	default_options: [
+		'c_std=c11',
+		'cpp_std=c++11',
+		'warning_level=2',
+		'werror=true',
+	],
 )
 
-wayland_protos = dependency('wayland-protocols')
-wayland_client = dependency('wayland-client', version: '>=1.14.91')
-
-wl_protocol_dir = wayland_protos.get_pkgconfig_variable('pkgdatadir')
-
-wayland_scanner = find_program('wayland-scanner')
-wayland_scanner_code = generator(
-  wayland_scanner,
-  output: '@BASENAME@-protocol.c',
-  arguments: ['private-code', '@INPUT@', '@OUTPUT@'],
-)
-wayland_scanner_client = generator(
-  wayland_scanner,
-  output: '@BASENAME@-client-protocol.h',
-  arguments: ['client-header', '@INPUT@', '@OUTPUT@'],
-)
-
-xml = join_paths([wl_protocol_dir, 'unstable/idle-inhibit/idle-inhibit-unstable-v1.xml'])
-client_protos_src = wayland_scanner_code.process(xml)
-client_protos_headers = wayland_scanner_client.process(xml)
-
-lib_client_protos = static_library(
-  'client_protos',
-  [ client_protos_src, client_protos_headers ],
-  dependencies: [ wayland_client ],
+add_project_arguments(
+	[
+		'-Wno-unused-parameter',
+		'-Wno-unused-result',
+		'-Wno-missing-braces',
+		'-Wno-format-zero-length',
+		'-Wno-missing-field-initializers',
+		'-Wundef',
+		'-Wvla',
+		'-Wlogical-op',
+		'-Wmissing-include-dirs',
+		'-Wpointer-arith',
+		'-Winit-self',
+		'-Wimplicit-fallthrough=2',
+		'-Wendif-labels',
+		'-Wstrict-aliasing=2',
+		'-Woverflow',
+		'-Walloca',
+	],
+	language: 'cpp',
 )
 
-client_protos = declare_dependency(
-  link_with: lib_client_protos,
-  sources: client_protos_headers,
-)
+logind_dep = dependency('lib' + get_option('logind-provider'), required: true)
+
+add_project_arguments('-D', 'HAVE_' + get_option('logind-provider').to_upper(), language: 'cpp')
 
 executable(
-  'sway-audio-idle-inhibit',
-  [
-    './src/main.cpp',
-    './src/data.cpp',
-    './src/pulse.cpp',
-    './src/idle.cpp',
-  ],
-  include_directories: [
-    include_directories('include')
-  ],
-  dependencies: [
-    dependency('libpulse', version: '>= 15.0'),
-    wayland_protos,
-    wayland_client,
-    client_protos,
-  ],
-  install: true,
+	'sway-audio-idle-inhibit',
+	files(
+		'./src/data.cpp',
+		'./src/idle.cpp',
+		'./src/main.cpp',
+		'./src/pulse.cpp',
+	),
+	include_directories: include_directories('include'),
+	dependencies: [
+		dependency('libpulse', version: '>= 15.0'),
+		logind_dep,
+	],
+	install: true,
 )
