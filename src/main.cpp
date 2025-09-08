@@ -2,9 +2,12 @@
 #include <iostream>
 #include <libgen.h>
 #include <string>
+#include <sys/file.h>
 
 #include "data.hpp"
 #include "pulse.hpp"
+
+#define LOCK_FILE "/tmp/sway-audio-idle-inhibit.lock"
 
 void showHelp(char **argv) {
 	string name = basename(argv[0]);
@@ -26,6 +29,23 @@ void showHelp(char **argv) {
 			"source is running\n";
 	cout << "\t --ignore-source-outputs \t\t Don't inhibit idle for these "
 			"source outputs\n";
+}
+
+static bool is_already_running() {
+	FILE *fd = fopen(LOCK_FILE, "w+");
+	if (!fd) {
+		fprintf(stderr, "Could not open lock file: %s\n", LOCK_FILE);
+		return true;
+	}
+	if (flock(fd->_fileno, LOCK_EX | LOCK_NB) < 0) {
+		if (errno == EWOULDBLOCK) {
+			fprintf(stderr, "An instance is already running\n");
+		} else {
+			fprintf(stderr, "Could not lock file: %s\n", LOCK_FILE);
+		}
+		return true;
+	}
+	return false;
 }
 
 int main(int argc, char *argv[]) {
@@ -60,7 +80,7 @@ int main(int argc, char *argv[]) {
 				ignoredSourceOutputs[ignoredSourceOutputsCount] = nullptr;
 			} else {
 				showHelp(argv);
-				return 0;
+				return EXIT_SUCCESS;
 			}
 		}
 	}
@@ -69,6 +89,10 @@ int main(int argc, char *argv[]) {
 		(pa_subscription_mask_t)(PA_SUBSCRIPTION_MASK_SINK_INPUT |
 								 PA_SUBSCRIPTION_MASK_SOURCE_OUTPUT);
 	if (!printSink && !printSource && !printBoth && !printBothWayBar) {
+		// Ensure that only one blocking instance is running
+		if (is_already_running()) {
+			return EXIT_FAILURE;
+		}
 		return Pulse().init(SUBSCRIPTION_TYPE_IDLE, all_mask, EVENT_TYPE_IDLE,
 							ignoredSourceOutputs);
 	} else if (printBoth) {
@@ -86,5 +110,5 @@ int main(int argc, char *argv[]) {
 							PA_SUBSCRIPTION_MASK_SOURCE_OUTPUT,
 							EVENT_TYPE_DRY_SOURCE, ignoredSourceOutputs);
 	}
-	return 0;
+	return EXIT_SUCCESS;
 }
