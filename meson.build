@@ -36,6 +36,22 @@ logind_dep = dependency('lib' + get_option('logind-provider'), required: true)
 
 add_project_arguments('-D', 'HAVE_' + get_option('logind-provider').to_upper(), language: 'cpp')
 
+# Systemd service unit
+dep_systemd = dependency('systemd')
+if dep_systemd.found()
+  systemd_service_install_dir = dep_systemd.get_variable(pkgconfig: 'systemduserunitdir')
+else
+  systemd_service_install_dir = join_paths(get_option('libdir'), 'systemd', 'user')
+endif
+conf_data = configuration_data()
+conf_data.set('bindir', join_paths(get_option('prefix'), get_option('bindir')))
+configure_file(
+  configuration: conf_data,
+  input: 'services/systemd/sway-audio-idle-inhibit.service.in',
+  output: '@BASENAME@',
+  install_dir: systemd_service_install_dir,
+)
+
 executable(
 	'sway-audio-idle-inhibit',
 	files(
