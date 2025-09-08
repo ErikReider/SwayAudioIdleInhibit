@@ -23,7 +23,8 @@ void Idle::block() {
 		"org.freedesktop.login1.Manager", "Inhibit", &error, &message, "ssss",
 		"idle", "sway-audio-idle-inhibit", "Audio is playing", "block");
 	if (ret < 0) {
-		fprintf(stderr, "Could not send inhibit signal!\n");
+		fprintf(stderr, "Could not send inhibit signal! %s: %s\n", error.name,
+				error.message);
 		abort();
 	}
 
