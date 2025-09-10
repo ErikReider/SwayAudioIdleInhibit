@@ -14,6 +14,7 @@ BuildRequires: gcc-c++
 
 BuildRequires: pkgconfig(libpulse)
 BuildRequires: pkgconfig(libsystemd)
+BuildRequires: pkgconfig(systemd)
 
 %{?systemd_requires}
 
@@ -33,9 +34,16 @@ This only works for Pulseaudio / Pipewire Pulse
 %install
 %meson_install
 
+%post
+%systemd_user_post sway-audio-idle-inhibit.service
+
+%preun
+%systemd_user_preun sway-audio-idle-inhibit.service
+
 %files
 %doc README.md
 %{_bindir}/sway-audio-idle-inhibit
+%{_userunitdir}/sway-audio-idle-inhibit.service
 %license LICENSE
 
 # Changelog will be empty until you make first annotated Git tag.

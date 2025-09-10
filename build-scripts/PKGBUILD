@@ -12,7 +12,7 @@ arch=(
     'armv7h'  # ARM v7 hardfloat
 )
 license=(GPL)
-depends=("systemd-libs" "libpulse")
+depends=("systemd-libs" "libpulse" "systemd")
 makedepends=(gcc meson git)
 optdepends=("swaync-git" "swaysettings-git")
 source=("git+$url")
