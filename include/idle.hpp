@@ -1,9 +1,10 @@
 #pragma once
 
-#if HAVE_SYSTEMD
+#ifdef HAVE_SYSTEMD
 #include <systemd/sd-bus.h>
 #include <systemd/sd-login.h>
-#elif HAVE_ELOGIND
+#endif
+#ifdef HAVE_ELOGIND
 #include <elogind/sd-bus.h>
 #include <elogind/sd-login.h>
 #endif
