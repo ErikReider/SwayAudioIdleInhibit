@@ -1,3 +1,35 @@
+
+<div align="right">
+  <details>
+    <summary >🌐 Language</summary>
+    <div>
+      <div align="center">
+        <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=en">English</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=zh-CN">简体中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=zh-TW">繁體中文</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=ja">日本語</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=ko">한국어</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=hi">हिन्दी</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=th">ไทย</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=fr">Français</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=de">Deutsch</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=es">Español</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=it">Italiano</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=ru">Русский</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=pt">Português</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=nl">Nederlands</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=pl">Polski</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=ar">العربية</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=fa">فارسی</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=tr">Türkçe</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=vi">Tiếng Việt</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=id">Bahasa Indonesia</a>
+        | <a href="https://openaitx.github.io/view.html?user=ErikReider&project=SwayAudioIdleInhibit&lang=as">অসমীয়া</
+      </div>
+    </div>
+  </details>
+</div>
+
 # SwayAudioIdleInhibit
 
 Prevents swayidle/hypridle from sleeping while any application is outputting or
