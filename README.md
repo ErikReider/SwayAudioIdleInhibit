@@ -23,6 +23,16 @@ meson compile -C build
 meson install -C build
 ```
 
+### Build Dependencies
+
+#### Debian (Using systemd for logind)
+
+In addition to the c++ compiler of your choosing:
+
+```bash
+apt install meson pkgconf libsystemd-dev libpulse-dev
+```
+
 ## Sway Usage
 
 ```ini
