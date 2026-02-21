@@ -10,8 +10,10 @@ project(
 	],
 )
 
+cpp = meson.get_compiler('cpp')
+
 add_project_arguments(
-	[
+	cpp.get_supported_arguments([
 		'-Wno-unused-parameter',
 		'-Wno-unused-result',
 		'-Wno-missing-braces',
@@ -28,7 +30,7 @@ add_project_arguments(
 		'-Wstrict-aliasing=2',
 		'-Woverflow',
 		'-Walloca',
-	],
+	]),
 	language: 'cpp',
 )
 
