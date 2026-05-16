@@ -63,6 +63,26 @@ Monitor sinks: will print `RUNNING` or `NOT RUNNING`
 sway-audio-idle-inhibit --dry-print-sink
 ```
 
+Ignore muted and zero-volume streams when deciding whether audio is running:
+
+```zsh
+sway-audio-idle-inhibit --ignore-muted-streams
+```
+
+Ignore playback streams from specific applications by exact PulseAudio
+`application.name` values:
+
+```zsh
+sway-audio-idle-inhibit --ignore-sink-inputs "speech-dispatcher-dummy speech-dispatcher-espeak-ng"
+```
+
+Ignore recording streams from specific applications by exact PulseAudio
+`application.name` values:
+
+```zsh
+sway-audio-idle-inhibit --ignore-source-outputs "app-one app-two"
+```
+
 ## Waybar Integration
 
 A custom waybar module can be used to display an icon when any application is

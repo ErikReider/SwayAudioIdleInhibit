@@ -6,13 +6,16 @@
 Data::Data(pa_threaded_mainloop *mainloop, pa_mainloop_api *mainloop_api,
 		   SubscriptionType subscriptionType,
 		   pa_subscription_mask_t pa_subscriptionType, EventType eventType,
-		   char **ignoredSourceOutputs) {
+		   char **ignoredSinkInputs, char **ignoredSourceOutputs,
+		   bool ignoreMutedStreams) {
 	this->mainloop = mainloop;
 	this->mainloop_api = mainloop_api;
 	this->subscriptionType = subscriptionType;
 	this->pa_subscriptionType = pa_subscriptionType;
 	this->eventCalled = eventType;
+	this->ignoredSinkInputs = ignoredSinkInputs;
 	this->ignoredSourceOutputs = ignoredSourceOutputs;
+	this->ignoreMutedStreams = ignoreMutedStreams;
 
 	if (subscriptionType == SUBSCRIPTION_TYPE_IDLE)
 		idle = new Idle();

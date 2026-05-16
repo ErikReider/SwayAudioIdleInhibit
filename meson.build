@@ -40,7 +40,10 @@ add_project_arguments('-D', 'HAVE_' + get_option('logind-provider').to_upper(), 
 if get_option('logind-provider') == 'systemd'
 	dep_systemd = dependency('systemd')
 	if dep_systemd.found()
-		systemd_service_install_dir = dep_systemd.get_variable(pkgconfig: 'systemduserunitdir')
+		systemd_service_install_dir = dep_systemd.get_variable(
+			pkgconfig: 'systemduserunitdir',
+			default_value: join_paths(get_option('libdir'), 'systemd', 'user'),
+		)
 	else
 		systemd_service_install_dir = join_paths(get_option('libdir'), 'systemd', 'user')
 	endif

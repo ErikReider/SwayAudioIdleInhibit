@@ -12,7 +12,8 @@ class Pulse {
   public:
 	int init(SubscriptionType subscriptionType,
 			 pa_subscription_mask_t pa_subscriptionType, EventType eventType,
-			 char **ignoredSourceOutputs);
+			 char **ignoredSinkInputs, char **ignoredSourceOutputs,
+			 bool ignoreMutedStreams);
 
   private:
 	static void sink_input_info_callback(pa_context *,
@@ -38,7 +39,8 @@ class Pulse {
 	void connect(pa_threaded_mainloop *mainloop, pa_mainloop_api *mainloop_api,
 				 SubscriptionType subscriptionType,
 				 pa_subscription_mask_t pa_subscriptionType,
-				 EventType eventType, char **ignoredSourceOutputs);
+				 EventType eventType, char **ignoredSinkInputs,
+				 char **ignoredSourceOutputs, bool ignoreMutedStreams);
 
 	pa_threaded_mainloop *getMainLoop();
 

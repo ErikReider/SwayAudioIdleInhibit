@@ -27,8 +27,23 @@ void showHelp(char **argv) {
 			"sink is running\n";
 	cout << "\t --dry-print-source \t\t Don't inhibit idle and print if any "
 			"source is running\n";
+	cout << "\t --ignore-muted-streams \t Don't inhibit idle for muted or "
+			"zero-volume streams\n";
+	cout << "\t --ignore-sink-inputs \t\t Don't inhibit idle for these "
+			"sink inputs\n";
 	cout << "\t --ignore-source-outputs \t\t Don't inhibit idle for these "
 			"source outputs\n";
+}
+
+static void addIgnoredApps(char *arg, char **ignoredApps, int *ignoredAppsCount) {
+	char *saveptr;
+	char *token = strtok_r(arg, " ", &saveptr);
+	while (token != nullptr && *ignoredAppsCount < MAX_IGNORED_APPS) {
+		ignoredApps[(*ignoredAppsCount)++] = token;
+		token = strtok_r(nullptr, " ", &saveptr);
+	}
+
+	ignoredApps[*ignoredAppsCount] = nullptr;
 }
 
 static bool is_already_running() {
@@ -53,8 +68,11 @@ int main(int argc, char *argv[]) {
 	bool printBothWayBar = false;
 	bool printSource = false;
 	bool printSink = false;
+	bool ignoreMutedStreams = false;
 
-	char *ignoredSourceOutputs[MAX_IGNORED_SOURCE_OUTPUTS] = {nullptr};
+	char *ignoredSinkInputs[MAX_IGNORED_APPS + 1] = {nullptr};
+	char *ignoredSourceOutputs[MAX_IGNORED_APPS + 1] = {nullptr};
+	int ignoredSinkInputsCount = 0;
 	int ignoredSourceOutputsCount = 0;
 
 	if (argc > 1) {
@@ -67,17 +85,16 @@ int main(int argc, char *argv[]) {
 				printBoth = true;
 			} else if (strcmp(argv[i], "--dry-print-both-waybar") == 0) {
 				printBothWayBar = true;
+			} else if (strcmp(argv[i], "--ignore-muted-streams") == 0) {
+				ignoreMutedStreams = true;
+			} else if (strcmp(argv[i], "--ignore-sink-inputs") == 0 &&
+					   i + 1 < argc) {
+				addIgnoredApps(argv[++i], ignoredSinkInputs,
+							   &ignoredSinkInputsCount);
 			} else if (strcmp(argv[i], "--ignore-source-outputs") == 0 &&
 					   i + 1 < argc) {
-				char *saveptr;
-				char *token = strtok_r(argv[++i], " ", &saveptr);
-				while (token != nullptr &&
-					   ignoredSourceOutputsCount < MAX_IGNORED_SOURCE_OUTPUTS) {
-					ignoredSourceOutputs[ignoredSourceOutputsCount++] = token;
-					token = strtok_r(nullptr, " ", &saveptr);
-				}
-
-				ignoredSourceOutputs[ignoredSourceOutputsCount] = nullptr;
+				addIgnoredApps(argv[++i], ignoredSourceOutputs,
+							   &ignoredSourceOutputsCount);
 			} else {
 				showHelp(argv);
 				return EXIT_SUCCESS;
@@ -94,21 +111,26 @@ int main(int argc, char *argv[]) {
 			return EXIT_FAILURE;
 		}
 		return Pulse().init(SUBSCRIPTION_TYPE_IDLE, all_mask, EVENT_TYPE_IDLE,
-							ignoredSourceOutputs);
+							ignoredSinkInputs, ignoredSourceOutputs,
+							ignoreMutedStreams);
 	} else if (printBoth) {
 		return Pulse().init(SUBSCRIPTION_TYPE_DRY_BOTH, all_mask,
-							EVENT_TYPE_DRY_BOTH, ignoredSourceOutputs);
+							EVENT_TYPE_DRY_BOTH, ignoredSinkInputs,
+							ignoredSourceOutputs, ignoreMutedStreams);
 	} else if (printBothWayBar) {
 		return Pulse().init(SUBSCRIPTION_TYPE_DRY_BOTH_WAYBAR, all_mask,
-							EVENT_TYPE_DRY_BOTH, ignoredSourceOutputs);
+							EVENT_TYPE_DRY_BOTH, ignoredSinkInputs,
+							ignoredSourceOutputs, ignoreMutedStreams);
 	} else if (printSink) {
 		return Pulse().init(SUBSCRIPTION_TYPE_DRY_SINK,
 							PA_SUBSCRIPTION_MASK_SINK_INPUT,
-							EVENT_TYPE_DRY_SINK, ignoredSourceOutputs);
+							EVENT_TYPE_DRY_SINK, ignoredSinkInputs,
+							ignoredSourceOutputs, ignoreMutedStreams);
 	} else if (printSource) {
 		return Pulse().init(SUBSCRIPTION_TYPE_DRY_SOURCE,
 							PA_SUBSCRIPTION_MASK_SOURCE_OUTPUT,
-							EVENT_TYPE_DRY_SOURCE, ignoredSourceOutputs);
+							EVENT_TYPE_DRY_SOURCE, ignoredSinkInputs,
+							ignoredSourceOutputs, ignoreMutedStreams);
 	}
 	return EXIT_SUCCESS;
 }

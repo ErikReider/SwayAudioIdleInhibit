@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#define MAX_IGNORED_SOURCE_OUTPUTS 100
+#define MAX_IGNORED_APPS 100
 
 enum SubscriptionType {
 	SUBSCRIPTION_TYPE_IDLE,
@@ -36,7 +36,9 @@ struct Data {
 	SubscriptionType subscriptionType;
 	pa_subscription_mask_t pa_subscriptionType;
 
+	char **ignoredSinkInputs;
 	char **ignoredSourceOutputs;
+	bool ignoreMutedStreams;
 
 	Idle *idle = NULL;
 
@@ -45,7 +47,8 @@ struct Data {
 	Data(pa_threaded_mainloop *mainloop, pa_mainloop_api *mainloop_api,
 		 SubscriptionType subscriptionType,
 		 pa_subscription_mask_t pa_subscriptionType, EventType eventType,
-		 char **ignoredSourceOutputs);
+		 char **ignoredSinkInputs, char **ignoredSourceOutputs,
+		 bool ignoreMutedStreams);
 
 	void quit(int returnValue = 0);
 
