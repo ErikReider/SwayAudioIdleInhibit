@@ -30,7 +30,7 @@ meson install -C build
 In addition to the c++ compiler of your choosing:
 
 ```bash
-apt install meson pkgconf libsystemd-dev libpulse-dev
+apt install meson pkgconf libsystemd-dev libpulse-dev systemd-dev
 ```
 
 ## Sway Usage
