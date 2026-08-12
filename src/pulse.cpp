@@ -26,10 +26,24 @@ int Pulse::init(SubscriptionType subscriptionType,
 	return 0;
 }
 
+static bool isIgnoredApp(pa_proplist *proplist, char **ignored) {
+	if (!proplist || !ignored)
+		return false;
+	const char *appName = pa_proplist_gets(proplist, "application.name");
+	if (!appName)
+		return false;
+	for (int n = 0; n < MAX_IGNORED_SOURCE_OUTPUTS && ignored[n] != nullptr; n++) {
+		if (strcmp(appName, ignored[n]) == 0)
+			return true;
+	}
+	return false;
+}
+
 void Pulse::sink_input_info_callback(pa_context *, const pa_sink_input_info *i,
 									 int, void *userdata) {
 	Data *data = (Data *)userdata;
-	if (i && !i->corked && i->client != PA_INVALID_INDEX)
+	if (i && !i->corked && i->client != PA_INVALID_INDEX &&
+		!isIgnoredApp(i->proplist, data->ignoredSourceOutputs))
 		data->activeSink = true;
 	pa_threaded_mainloop_signal(data->mainloop, 0);
 }
@@ -38,25 +52,8 @@ void Pulse::source_output_info_callback(pa_context *,
 										const pa_source_output_info *i, int,
 										void *userdata) {
 	Data *data = (Data *)userdata;
-	bool ignoreSourceOutput = false;
-	if (i && i->proplist) {
-		const char *appName = pa_proplist_gets(i->proplist, "application.name");
-		if (appName) {
-			int ignoredSourceOutputsCount = 0;
-			while (data->ignoredSourceOutputs[ignoredSourceOutputsCount] !=
-					   nullptr &&
-				   ignoreSourceOutput == false &&
-				   ignoredSourceOutputsCount < MAX_IGNORED_SOURCE_OUTPUTS) {
-				if (strcmp(appName, data->ignoredSourceOutputs
-										[ignoredSourceOutputsCount]) == 0) {
-					ignoreSourceOutput = true;
-					break;
-				}
-				ignoredSourceOutputsCount++;
-			}
-		}
-	}
-	if (i && !i->corked && i->client != PA_INVALID_INDEX && !ignoreSourceOutput)
+	if (i && !i->corked && i->client != PA_INVALID_INDEX &&
+		!isIgnoredApp(i->proplist, data->ignoredSourceOutputs))
 		data->activeSource = true;
 	pa_threaded_mainloop_signal(data->mainloop, 0);
 }
