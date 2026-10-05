@@ -19,11 +19,10 @@ add_project_arguments(
 		'-Wno-missing-field-initializers',
 		'-Wundef',
 		'-Wvla',
-		'-Wlogical-op',
 		'-Wmissing-include-dirs',
 		'-Wpointer-arith',
 		'-Winit-self',
-		'-Wimplicit-fallthrough=2',
+		'-Wimplicit-fallthrough',
 		'-Wendif-labels',
 		'-Wstrict-aliasing=2',
 		'-Woverflow',
@@ -31,6 +30,10 @@ add_project_arguments(
 	],
 	language: 'cpp',
 )
+
+if meson.get_compiler('cpp').has_argument('-Wlogical-op')
+    add_project_arguments('-Wlogical-op', language: 'cpp')
+endif
 
 logind_dep = dependency('lib' + get_option('logind-provider'), required: true)
 

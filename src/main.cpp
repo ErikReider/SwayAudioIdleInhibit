@@ -37,7 +37,7 @@ static bool is_already_running() {
 		fprintf(stderr, "Could not open lock file: %s\n", LOCK_FILE);
 		return true;
 	}
-	if (flock(fd->_fileno, LOCK_EX | LOCK_NB) < 0) {
+	if (flock(fileno(fd), LOCK_EX | LOCK_NB) < 0) {
 		if (errno == EWOULDBLOCK) {
 			fprintf(stderr, "An instance is already running\n");
 		} else {
