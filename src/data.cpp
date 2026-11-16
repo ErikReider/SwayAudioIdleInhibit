@@ -12,6 +12,7 @@ Data::Data(pa_threaded_mainloop *mainloop, pa_mainloop_api *mainloop_api,
 	this->subscriptionType = subscriptionType;
 	this->pa_subscriptionType = pa_subscriptionType;
 	this->eventCalled = eventType;
+	this->eventType = eventType;
 	this->ignoredSourceOutputs = ignoredSourceOutputs;
 
 	if (subscriptionType == SUBSCRIPTION_TYPE_IDLE)
