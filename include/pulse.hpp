@@ -31,9 +31,15 @@ class Pulse {
 
 	static void context_state_callback(pa_context *c, void *userdata);
 
-	static pa_context *getContext(pa_threaded_mainloop *mainloop,
-								  pa_mainloop_api *mainloop_api,
-								  void *userdata);
+	static void connect_timeout_callback(pa_mainloop_api *, pa_time_event *,
+										 const struct timeval *,
+										 void *userdata);
+
+	static void releaseContext(pa_context *context);
+
+	static pa_context *getContext(Data *data, bool report);
+
+	static pa_context *getContextRetry(Data *data, bool reconnect);
 
 	void connect(pa_threaded_mainloop *mainloop, pa_mainloop_api *mainloop_api,
 				 SubscriptionType subscriptionType,

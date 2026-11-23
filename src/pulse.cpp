@@ -6,11 +6,19 @@
 #include <pulse/mainloop-api.h>
 #include <pulse/proplist.h>
 #include <pulse/pulseaudio.h>
+#include <pulse/rtclock.h>
 #include <pulse/thread-mainloop.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "data.hpp"
 #include "pulse.hpp"
+
+// How long a new connection may take to become ready
+#define CONNECT_TIMEOUT_USEC (10 * PA_USEC_PER_SEC)
+// Delay between connection attempts
+#define RETRY_DELAY_MIN_MSEC 500
+#define RETRY_DELAY_MAX_MSEC 5000
 
 int Pulse::init(SubscriptionType subscriptionType,
 				pa_subscription_mask_t pa_subscriptionType, EventType eventType,
@@ -119,56 +127,124 @@ void Pulse::subscribe_callback(pa_context *, pa_subscription_event_type_t type,
 void Pulse::context_state_callback(pa_context *c, void *userdata) {
 	Data *data = (Data *)userdata;
 	switch (pa_context_get_state(c)) {
-	case PA_CONTEXT_CONNECTING:
-	case PA_CONTEXT_AUTHORIZING:
-	case PA_CONTEXT_SETTING_NAME:
-		break;
 	case PA_CONTEXT_READY:
 		pa_threaded_mainloop_signal(data->mainloop, 0);
 		break;
 	case PA_CONTEXT_TERMINATED:
 	case PA_CONTEXT_FAILED:
-		fprintf(stderr, "PulseAudio connection lost. Will retry connection.\n");
 		data->failed = true;
 		pa_threaded_mainloop_signal(data->mainloop, 0);
 		break;
 	default:
-		fprintf(stderr, "Connection failure: %s\n",
-				pa_strerror(pa_context_errno(c)));
-		data->quit(1);
-		exit(1);
 		break;
 	}
 }
 
-pa_context *Pulse::getContext(pa_threaded_mainloop *mainloop,
-							  pa_mainloop_api *mainloop_api, void *userdata) {
+void Pulse::connect_timeout_callback(pa_mainloop_api *, pa_time_event *,
+									 const struct timeval *, void *userdata) {
 	Data *data = (Data *)userdata;
+	data->connectTimedOut = true;
+	pa_threaded_mainloop_signal(data->mainloop, 0);
+}
 
-	pa_context *context = pa_context_new(mainloop_api, "PulseAudio Test");
+// Disconnects and frees a context. The caller holds the mainloop lock.
+void Pulse::releaseContext(pa_context *context) {
+	pa_context_set_state_callback(context, NULL, NULL);
+	pa_context_set_subscribe_callback(context, NULL, NULL);
+	pa_context_disconnect(context);
+	pa_context_unref(context);
+}
+
+// Connects a new context and subscribes to its events. Returns NULL if there
+// is no server, if the connection fails, or if it isn't ready within
+// CONNECT_TIMEOUT_USEC (a server that accepts and never answers would
+// otherwise keep it waiting for libpulse's own 30 s).
+pa_context *Pulse::getContext(Data *data, bool report) {
+	pa_threaded_mainloop_lock(data->mainloop);
+	pa_context *context = pa_context_new(data->mainloop_api, "PulseAudio Test");
 	if (!context) {
-		fprintf(stderr, "pa_context_new() failed\n");
-		exit(1);
-	}
-
-	pa_threaded_mainloop_lock(mainloop);
-	if (pa_context_connect(context, NULL, PA_CONTEXT_NOAUTOSPAWN, NULL) < 0) {
-		fprintf(stderr, "pa_context_connect() failed: %s\n",
-				pa_strerror(pa_context_errno(context)));
-		exit(1);
+		pa_threaded_mainloop_unlock(data->mainloop);
+		if (report)
+			fprintf(stderr, "pa_context_new() failed\n");
+		return NULL;
 	}
 	pa_context_set_state_callback(context, context_state_callback, data);
-	while (pa_context_get_state(context) != PA_CONTEXT_READY) {
-		pa_threaded_mainloop_wait(mainloop);
+	if (pa_context_connect(context, NULL, PA_CONTEXT_NOAUTOSPAWN, NULL) < 0) {
+		if (report)
+			fprintf(stderr, "pa_context_connect() failed: %s\n",
+					pa_strerror(pa_context_errno(context)));
+		releaseContext(context);
+		pa_threaded_mainloop_unlock(data->mainloop);
+		return NULL;
 	}
-	pa_threaded_mainloop_unlock(mainloop);
+
+	data->connectTimedOut = false;
+	pa_time_event *timeout =
+		pa_context_rttime_new(context, pa_rtclock_now() + CONNECT_TIMEOUT_USEC,
+							  connect_timeout_callback, data);
+	pa_context_state_t state;
+	while ((state = pa_context_get_state(context)) != PA_CONTEXT_READY &&
+		   PA_CONTEXT_IS_GOOD(state) && !data->connectTimedOut) {
+		pa_threaded_mainloop_wait(data->mainloop);
+	}
+	if (timeout)
+		data->mainloop_api->time_free(timeout);
+	if (state != PA_CONTEXT_READY) {
+		if (report && data->connectTimedOut)
+			fprintf(stderr, "PulseAudio connection timed out\n");
+		else if (report)
+			fprintf(stderr, "PulseAudio connection failed: %s\n",
+					pa_strerror(pa_context_errno(context)));
+		releaseContext(context);
+		pa_threaded_mainloop_unlock(data->mainloop);
+		return NULL;
+	}
 
 	data->context = context;
 	data->failed = false;
-
 	pa_context_set_subscribe_callback(context, subscribe_callback, data);
-	pa_context_subscribe(context, data->pa_subscriptionType, NULL, data);
+	pa_operation *op =
+		pa_context_subscribe(context, data->pa_subscriptionType, NULL, NULL);
+	if (op)
+		pa_operation_unref(op);
+	// Read the streams again: they may have changed while disconnected
+	data->eventCalled = data->eventType;
+	pa_threaded_mainloop_unlock(data->mainloop);
 	return context;
+}
+
+// Connects, retrying until a server answers. The delay between attempts
+// doubles from RETRY_DELAY_MIN_MSEC up to RETRY_DELAY_MAX_MSEC. Only the first
+// failure of a series is printed.
+//
+// When reconnecting, the idle inhibitor is kept if the first attempt succeeds
+// (the streams are read again right after), so a short drop doesn't release
+// it while audio plays. If that attempt fails, the streams of the lost server
+// can't be seen: the inhibitor is released (or the inactive state printed)
+// until they can.
+pa_context *Pulse::getContextRetry(Data *data, bool reconnect) {
+	unsigned int delay = RETRY_DELAY_MIN_MSEC;
+	bool report = true;
+	for (;;) {
+		pa_context *context = getContext(data, report);
+		if (context) {
+			if (reconnect || !report)
+				fprintf(stderr, "PulseAudio connection established.\n");
+			return context;
+		}
+		if (report) {
+			fprintf(stderr, "Will retry connection.\n");
+			if (reconnect) {
+				data->activeSink = false;
+				data->activeSource = false;
+				data->handleAction();
+			}
+		}
+		report = false;
+		usleep(delay * 1000);
+		delay =
+			delay * 2 < RETRY_DELAY_MAX_MSEC ? delay * 2 : RETRY_DELAY_MAX_MSEC;
+	}
 }
 
 void Pulse::connect(pa_threaded_mainloop *mainloop,
@@ -179,36 +255,49 @@ void Pulse::connect(pa_threaded_mainloop *mainloop,
 	Data *data = new Data(mainloop, mainloop_api, subscriptionType,
 						  pa_subscriptionType, eventType, ignoredSourceOutputs);
 
-	pa_context *context = getContext(mainloop, mainloop_api, data);
+	pa_context *context = getContextRetry(data, false);
 
 	for (;;) {
-		if (data->failed) {
-			context = getContext(data->mainloop, data->mainloop_api, data);
+		pa_threaded_mainloop_lock(mainloop);
+		while (data->eventCalled == EVENT_TYPE_NONE && !data->failed) {
+			pa_threaded_mainloop_wait(mainloop);
 		}
-		switch (data->eventCalled) {
+		EventType eventCalled = data->eventCalled;
+		data->eventCalled = EVENT_TYPE_NONE;
+		bool failed = data->failed;
+		pa_threaded_mainloop_unlock(mainloop);
+
+		if (failed) {
+			fprintf(stderr,
+					"PulseAudio connection lost. Will retry connection.\n");
+			pa_threaded_mainloop_lock(mainloop);
+			releaseContext(context);
+			pa_threaded_mainloop_unlock(mainloop);
+			context = getContextRetry(data, true);
+			continue;
+		}
+
+		switch (eventCalled) {
 		case EVENT_TYPE_IDLE:
 		case EVENT_TYPE_DRY_BOTH:
 			getRunning(EVENT_TYPE_DRY_SINK, data, context);
 			getRunning(EVENT_TYPE_DRY_SOURCE, data, context);
-			data->handleAction();
-			data->eventCalled = EVENT_TYPE_NONE;
 			break;
 		case EVENT_TYPE_DRY_SINK:
-			getRunning(data->eventCalled, data, context);
-			data->handleAction();
-			data->eventCalled = EVENT_TYPE_NONE;
-			break;
 		case EVENT_TYPE_DRY_SOURCE:
-			getRunning(data->eventCalled, data, context);
-			data->handleAction();
-			data->eventCalled = EVENT_TYPE_NONE;
+			getRunning(eventCalled, data, context);
 			break;
 		case EVENT_TYPE_NONE:
-			pa_threaded_mainloop_lock(mainloop);
-			pa_threaded_mainloop_wait(mainloop);
-			pa_threaded_mainloop_unlock(mainloop);
 			break;
 		}
+
+		// A connection lost during the queries leaves them incomplete; the
+		// next round handles the loss instead
+		pa_threaded_mainloop_lock(mainloop);
+		failed = data->failed;
+		pa_threaded_mainloop_unlock(mainloop);
+		if (!failed)
+			data->handleAction();
 	}
 }
 

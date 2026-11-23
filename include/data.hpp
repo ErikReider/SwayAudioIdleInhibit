@@ -30,6 +30,8 @@ struct Data {
 	pa_context *context;
 
 	EventType eventCalled = EVENT_TYPE_NONE;
+	// The query to run at start and after every reconnect
+	EventType eventType;
 	bool activeSource = false;
 	bool activeSink = false;
 
@@ -41,6 +43,7 @@ struct Data {
 	Idle *idle = NULL;
 
 	bool failed = false;
+	bool connectTimedOut = false;
 
 	Data(pa_threaded_mainloop *mainloop, pa_mainloop_api *mainloop_api,
 		 SubscriptionType subscriptionType,

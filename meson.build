@@ -54,7 +54,7 @@ if get_option('logind-provider') == 'systemd'
 	)
 endif
 
-executable(
+exe = executable(
 	'sway-audio-idle-inhibit',
 	files(
 		'./src/data.cpp',
@@ -68,4 +68,11 @@ executable(
 		logind_dep,
 	],
 	install: true,
+)
+
+test(
+	'lost-stream-events',
+	find_program('tests/lost-stream-events.sh'),
+	args: [exe],
+	timeout: 300,
 )
